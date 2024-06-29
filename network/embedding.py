@@ -67,3 +67,12 @@ class FeedForwardLayer(nn.Module):
     def forward(self, x):
         # (Batch, Seq_len, d_model) -> (Batch, seq_len, d_ff)
         return self.linear02(self.dropout(torch.relu(self.linear01(x))))
+
+class ResidualConnection(nn.Module):
+    def __init__(self, dropout: float) -> None:
+        super().__init__()
+        self.dropout = nn.Dropout(dropout)
+        self.norm = LayerNormalization()
+
+    def forward(self, x, sub_layer):
+        return x + self.dropout(sub_layer(self.norm(x)))

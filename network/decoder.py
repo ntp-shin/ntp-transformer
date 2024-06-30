@@ -16,7 +16,7 @@ class DecoderLayer(nn.Module):
         self.ff = ff
         self.dropout = nn.Dropout(dropout)
 
-        self.residual = nn.Module([ResidualConnection(dropout) for _ in range(3)])
+        self.residual = nn.ModuleList([ResidualConnection(dropout) for _ in range(3)])
 
     def forward(self, x, encoder_ouput, padding_mask, look_ahead_mask):
         x = self.residual[0](x, lambda x: self.self_attention(x, x, x, look_ahead_mask))

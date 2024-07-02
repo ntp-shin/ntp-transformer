@@ -1,0 +1,6 @@
+__pycache__
+*.pt
+*.json
+runs/
+opus-100_weights/
+data/

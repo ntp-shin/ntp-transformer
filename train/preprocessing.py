@@ -2,9 +2,10 @@ import torch
 import torch.nn as nn
 from torch.utils.data import Dataset, DataLoader, random_split
 
-from train.dataset import BilingualDataset, look_ahead_mask
+from dataset import BilingualDataset, look_ahead_mask
 from datasets import load_dataset
-from tokenizers.models import Tokenizer
+from tokenizers import Tokenizer
+from tokenizers.models import WordLevel
 from tokenizers.trainers import WordLevelTrainer
 from tokenizers.pre_tokenizers import Whitespace
 
@@ -42,7 +43,8 @@ def get_or_build_tokenizer(config, ds, lang):
     return tokenizer
 
 def get_ds(config):
-    ds_raw = load_dataset('opus_books',f'{config["lang_src"]}{config["lang_tgt"]}', split='train')
+    print(f"Loading dataset with config: {config['lang_src']}{config['lang_tgt']}")
+    ds_raw = load_dataset('Helsinki-NLP/opus-100', f'{config["lang_src"]}-{config["lang_tgt"]}', split='test')
 
     # Build Tokenizers:
     tokenizer_src = get_or_build_tokenizer(config, ds_raw, config['lang_src'])
@@ -53,20 +55,22 @@ def get_ds(config):
     val_size = len(ds_raw) - train_size
     train_ds_raw, val_ds_raw = random_split(ds_raw, [train_size, val_size])
 
-    train_ds = BilingualDataset(train_ds_raw, tokenizer_src, tokenizer_tgt,
-                                config['lang_src', config['lang_tgt']],
-                                config['seq_len'])
+    # train_ds = BilingualDataset(train_ds_raw, tokenizer_src, tokenizer_tgt,\
+    #                             config['lang_src'], config['lang_tgt'],\
+    #                             config['seq_len'])
+    train_ds = BilingualDataset(train_ds_raw, tokenizer_src, tokenizer_tgt, config['lang_src'], config['lang_tgt'], config['seq_len'])
+    val_ds = BilingualDataset(val_ds_raw, tokenizer_src, tokenizer_tgt, config['lang_src'], config['lang_tgt'], config['seq_len'])
 
-    val_ds = BilingualDataset(val_ds_raw, tokenizer_src, tokenizer_tgt,
-                                config['lang_src', config['lang_tgt']],
-                                config['seq_len'])
+    # val_ds = BilingualDataset(val_ds_raw, tokenizer_src, tokenizer_tgt,
+    #                             config['lang_src'], config['lang_tgt'],
+    #                             config['seq_len'])
     
     max_len_src = 0
     max_len_tgt = 0
 
     for item in ds_raw:
         src_ids = tokenizer_src.encode(item['translation'][config['lang_src']]).ids
-        tgt_ids = tokenizer_tgt.decode(item['translation'][config['lang_tgt']]).ids
+        tgt_ids = tokenizer_tgt.encode(item['translation'][config['lang_tgt']]).ids
 
         max_len_src = max(max_len_src, len(src_ids))
         max_len_tgt = max(max_len_tgt, len(tgt_ids))

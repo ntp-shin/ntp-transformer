@@ -6,7 +6,7 @@ from network.attention import *
 from network.embedding import FeedForwardLayer, ResidualConnection, LayerNormalization
 
 class DecoderLayer(nn.Module):
-    def __init__(self, self_attention: MultiHeadAttentionLayer,
+    def __init__(self, features: int, self_attention: MultiHeadAttentionLayer,
                         cross_attention: MultiHeadAttentionLayer,
                         ff: FeedForwardLayer,
                         dropout: float) -> None:
@@ -25,7 +25,7 @@ class DecoderLayer(nn.Module):
         return x
 
 class Decoder(nn.Module):
-    def __init__(self, layers: nn.ModuleList) -> None:
+    def __init__(self, features: int, layers: nn.ModuleList) -> None:
         super().__init__()
         self.layers = layers
         self.layer_norm = LayerNormalization()

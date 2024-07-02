@@ -6,7 +6,7 @@ from network.embedding import *
 from network.attention import *
 
 class EncodeLayer(nn.Module):
-    def __init__(self, mha: MultiHeadAttentionLayer, ff: FeedForwardLayer,
+    def __init__(self, features: int, mha: MultiHeadAttentionLayer, ff: FeedForwardLayer,
                 dropout: float) -> None:
         super().__init__()
         self.mha = mha
@@ -19,7 +19,7 @@ class EncodeLayer(nn.Module):
         return x
 
 class Encoder(nn.Module):
-    def __init__(self, layers: nn.ModuleList) -> None:
+    def __init__(self, features: int, layers: nn.ModuleList) -> None:
         super().__init__()
         self.layers = layers
         self.norm = LayerNormalization()

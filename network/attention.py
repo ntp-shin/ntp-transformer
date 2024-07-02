@@ -19,7 +19,7 @@ class MultiHeadAttentionLayer(nn.Module):
         self.w_v = nn.Linear(d_model, d_model)
 
         self.w_o = nn.Linear(d_model, d_model)
-        self.multi_head_attention = nn.MultiHeadAttention(d_model, num_heads)
+        self.multi_head_attention = nn.MultiheadAttention(d_model, num_heads)
 
     @staticmethod
     def attention(q, k, v, mask, dropout: nn.Dropout):
@@ -27,7 +27,7 @@ class MultiHeadAttentionLayer(nn.Module):
 
         # (batch, num_heads, seq_len, d_k) 
         # (batch, num_heads, seq_len, seq_len)
-        attention_scores = (query @ key.transpose(-2, -1)) / math.sqrt(d_k)
+        attention_scores = (q @ k.transpose(-2, -1)) / math.sqrt(d_k)
         if mask is not None:
             attention_scores +=  (1. - mask) * -1e10
         

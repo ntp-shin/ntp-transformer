@@ -26,21 +26,24 @@ class Transformer(nn.Module):
         self.decoder = decoder
         self.inputs = inputs
         self.outputs = outputs
-        self.positions = positions
+        self.position_inputs = position_inputs
+        self.position_outputs = position_outputs
         self.project_layer = project_layer
 
-    def encoder(self, inputs, padding_mask):
+    def encode(self, inputs, padding_mask):
         inputs = self.inputs(inputs)
-        inputs = self.positions(inputs)
+        inputs = self.position_inputs(inputs)
         return self.encoder(inputs, padding_mask)
 
-    def decoder(self, outputs, encoder_ouput, padding_mask, look_ahead_mask):
-        outputs = self.outputs(outputs)
-        outputs = self.positions(outputs)
-        return self.decoder(outputs, encoder_ouput, padding_mask, look_ahead_mask)
+    def decode(self, encoder_output: torch.Tensor, src_mask: torch.Tensor, tgt: torch.Tensor, tgt_mask: torch.Tensor):
+        tgt = self.outputs(tgt)
+        tgt = self.position_outputs(tgt)
+        return self.decoder(tgt, encoder_output, src_mask, tgt_mask)
 
-    def project_layer(self, decoder_output):
-        return self.project_layer(decoder_output)
+
+    def project(self, x):
+        # (batch, seq_len, vocab_size)
+        return self.project_layer(x)
 
 def build_transformer(inputs_size: int, outputs_size: int,
                     inputs_seq_len: int, outputs_seq_len: int,
@@ -67,7 +70,7 @@ def build_transformer(inputs_size: int, outputs_size: int,
     for _ in range(number_layers):
         encoder_mha = MultiHeadAttentionLayer(d_model=d_model, num_heads=num_heads, dropout=dropout)
         encoder_ff = FeedForwardLayer(d_model, d_ff, dropout)
-        encoder_layer = EncodeLayer(encoder_mha, encoder_ff, dropout)
+        encoder_layer = EncodeLayer(d_model, encoder_mha, encoder_ff, dropout)
         encoder_layers.append(encoder_layer)
 
     # 3.2 Decoder_layers
@@ -77,13 +80,14 @@ def build_transformer(inputs_size: int, outputs_size: int,
         cross_attention = MultiHeadAttentionLayer(d_model, num_heads, dropout)
         decoder_ff = FeedForwardLayer(d_model, d_ff, dropout)
 
-        decoder_layer = DecoderLayer(self_attention, cross_attention, decoder_ff, dropout)
+        decoder_layer = DecoderLayer(d_model, self_attention, cross_attention, decoder_ff, dropout)
         decoder_layers.append(decoder_layer)
 
     # 4.1 Encoder
-    encoder = Encoder(nn.ModuleList(encoder_layers))
+    encoder = Encoder(d_model, nn.ModuleList(encoder_layers))
     # 4.2 Decoder
-    decoder = Decoder(nn.ModuleList(decoder_layer))
+    decoder = Decoder(d_model, nn.ModuleList(decoder_layers))
+    
 
     # 5. Project Layer
     project_layer = ProjectLayer(d_model, outputs_size)
@@ -95,10 +99,9 @@ def build_transformer(inputs_size: int, outputs_size: int,
                             project_layer=project_layer,)
 
     # 7 Initialize the parameters
-    for para in transformer.prameters():
+    for p in transformer.parameters():
         if p.dim() > 1:
             nn.init.xavier_uniform_(p)
-
 
     return transformer
 

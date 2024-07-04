@@ -25,8 +25,8 @@ class BilingualDataset(Dataset):
     
     def __getitem__(self, index):
         src_target_pair = self.ds[index]
-        src_text = src_target_pair['translation'][self.src_lang]
-        tgt_text = src_target_pair['translation'][self.tgt_lang]
+        src_text = src_target_pair[self.src_lang]
+        tgt_text = src_target_pair[self.tgt_lang]
 
         enc_input_tokens = self.tokenizer_src.encode(src_text).ids
         dec_input_tokens = self.tokenizer_tgt.encode(tgt_text).ids
@@ -35,6 +35,12 @@ class BilingualDataset(Dataset):
         dec_num_padding_tokens = self.seq_len - len(dec_input_tokens) - 1
 
         if enc_num_padding_tokens < 0 or dec_num_padding_tokens < 0:
+            print("Error: Sentence is too long")
+            print("Index: ", index)
+            print("enc_num_padding_tokens: ", enc_num_padding_tokens)
+            print("dec_num_padding_tokens: ", dec_num_padding_tokens)
+            print(f"tgt_text: {tgt_text}")
+            print(f"src_text: {src_text}")
             raise ValueError('Sentence is too long')
 
         # Add SOS and SOS to source text
